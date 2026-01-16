@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.routers.auth import router as auth_router
 from src.db.session import check_db_connection
 from src.settings import get_settings
 
@@ -8,6 +9,7 @@ settings = get_settings()
 
 openapi_tags = [
     {"name": "Health", "description": "Service health and readiness endpoints."},
+    {"name": "Auth", "description": "User registration/login and JWT token management."},
 ]
 
 app = FastAPI(
@@ -24,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API routers
+app.include_router(auth_router)
 
 
 @app.on_event("startup")

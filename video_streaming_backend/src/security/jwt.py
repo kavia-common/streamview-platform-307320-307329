@@ -1,7 +1,10 @@
 """JWT helper utilities.
 
 This module centralizes JWT encoding/decoding based on application settings.
-Routes/services can import these helpers later when implementing auth endpoints.
+
+We issue two token types:
+- Access token: short-lived JWT used for authorization (Authorization: Bearer <token>)
+- Refresh token: opaque random string stored server-side (DB) and rotated on refresh
 """
 
 from __future__ import annotations
@@ -21,15 +24,20 @@ def create_access_token(subject: str, extra_claims: Dict[str, Any] | None = None
     """Create a signed JWT access token.
 
     Args:
-        subject: Typically the user ID or email.
-        extra_claims: Additional JWT claims to embed.
+        subject: Token subject. We use the user id (as string).
+        extra_claims: Additional JWT claims to embed (e.g. role).
 
     Returns:
         Signed JWT string.
     """
     now = datetime.now(tz=timezone.utc)
     exp = now + timedelta(minutes=_settings.access_token_expire_minutes)
-    payload: Dict[str, Any] = {"sub": subject, "iat": int(now.timestamp()), "exp": exp}
+    payload: Dict[str, Any] = {
+        "sub": subject,
+        "typ": "access",
+        "iat": int(now.timestamp()),
+        "exp": exp,
+    }
     if extra_claims:
         payload.update(extra_claims)
     return jwt.encode(payload, _settings.jwt_secret, algorithm=_settings.jwt_alg)
